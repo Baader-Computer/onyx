@@ -107,6 +107,7 @@ class OnyxConfluence:
             "api_version": "cloud" if is_cloud else "latest",
             "backoff_and_retry": True,
             "cloud": is_cloud,
+            "verify_ssl":False # ✅ Disable SSL verification for internal Confluence
         }
         if timeout:
             self.shared_base_kwargs["timeout"] = timeout
