@@ -35,6 +35,9 @@ GENERATIVE_MODEL_ACCESS_CHECK_FREQ = int(
 )  # 1 day
 DISABLE_GENERATIVE_AI = os.environ.get("DISABLE_GENERATIVE_AI", "").lower() == "true"
 
+# Controls whether users can use User Knowledge (personal documents) in assistants
+DISABLE_USER_KNOWLEDGE = os.environ.get("DISABLE_USER_KNOWLEDGE", "").lower() == "true"
+
 # Controls whether to allow admin query history reports with:
 # 1. associated user emails
 # 2. anonymized user emails
@@ -481,6 +484,7 @@ LINEAR_CLIENT_SECRET = os.getenv("LINEAR_CLIENT_SECRET")
 
 # Slack specific configs
 SLACK_NUM_THREADS = int(os.getenv("SLACK_NUM_THREADS") or 8)
+MAX_SLACK_QUERY_EXPANSIONS = int(os.environ.get("MAX_SLACK_QUERY_EXPANSIONS", "5"))
 
 DASK_JOB_CLIENT_ENABLED = (
     os.environ.get("DASK_JOB_CLIENT_ENABLED", "").lower() == "true"
@@ -653,6 +657,14 @@ except json.JSONDecodeError:
 
 # LLM Model Update API endpoint
 LLM_MODEL_UPDATE_API_URL = os.environ.get("LLM_MODEL_UPDATE_API_URL")
+
+# Federated Search Configs
+MAX_FEDERATED_SECTIONS = int(
+    os.environ.get("MAX_FEDERATED_SECTIONS", "5")
+)  # max no. of federated sections to always keep
+MAX_FEDERATED_CHUNKS = int(
+    os.environ.get("MAX_FEDERATED_CHUNKS", "5")
+)  # max no. of chunks to retrieve per federated connector
 
 #####
 # Enterprise Edition Configs

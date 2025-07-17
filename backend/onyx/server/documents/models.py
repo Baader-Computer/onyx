@@ -106,6 +106,7 @@ class ConnectorSnapshot(ConnectorBase):
 class CredentialSwapRequest(BaseModel):
     new_credential_id: int
     connector_id: int
+    access_type: AccessType
 
 
 class CredentialDataUpdateRequest(BaseModel):
@@ -403,6 +404,26 @@ class ConnectorCredentialPairDescriptor(BaseModel):
     connector: ConnectorSnapshot
     credential: CredentialSnapshot
     access_type: AccessType
+
+
+class CCPairSummary(BaseModel):
+    """Simplified connector-credential pair information with just essential data"""
+
+    id: int
+    name: str | None
+    source: DocumentSource
+    access_type: AccessType
+
+    @classmethod
+    def from_cc_pair_descriptor(
+        cls, descriptor: ConnectorCredentialPairDescriptor
+    ) -> "CCPairSummary":
+        return cls(
+            id=descriptor.id,
+            name=descriptor.name,
+            source=descriptor.connector.source,
+            access_type=descriptor.access_type,
+        )
 
 
 class RunConnectorRequest(BaseModel):

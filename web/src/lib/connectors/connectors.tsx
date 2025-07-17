@@ -1333,10 +1333,42 @@ For example, specifying .*-support.* as a "channel" will cause the connector to 
     ],
     advanced_values: [],
   },
+  imap: {
+    description: "Configure Email connector",
+    values: [
+      {
+        type: "text",
+        query: "Enter the IMAP server host:",
+        label: "IMAP Server Host",
+        name: "host",
+        optional: false,
+        description:
+          "The IMAP server hostname (e.g., imap.gmail.com, outlook.office365.com)",
+      },
+      {
+        type: "number",
+        query: "Enter the IMAP server port:",
+        label: "IMAP Server Port",
+        name: "port",
+        optional: true,
+        default: 993,
+        description: "The IMAP server port (default: 993 for SSL)",
+      },
+      {
+        type: "list",
+        query: "Enter mailboxes to include:",
+        label: "Mailboxes",
+        name: "mailboxes",
+        optional: true,
+        description:
+          "Specify mailboxes to index (e.g., INBOX, Sent, Drafts). Leave empty to index all mailboxes.",
+      },
+    ],
+    advanced_values: [],
+  },
 };
 export function createConnectorInitialValues(
-  connector: ConfigurableSources,
-  currentCredential: Credential<any> | null = null
+  connector: ConfigurableSources
 ): Record<string, any> & AccessTypeGroupSelectorFormType {
   const configuration = connectorConfigs[connector];
 
@@ -1353,16 +1385,7 @@ export function createConnectorInitialValues(
         } else if (field.type === "multiselect") {
           acc[field.name] = field.default || [];
         } else if (field.type === "checkbox") {
-          // Special case for include_files_shared_with_me when using service account
-          if (
-            field.name === "include_files_shared_with_me" &&
-            currentCredential &&
-            !currentCredential.credential_json?.google_tokens
-          ) {
-            acc[field.name] = true;
-          } else {
-            acc[field.name] = field.default || false;
-          }
+          acc[field.name] = field.default || false;
         } else if (field.default !== undefined) {
           acc[field.name] = field.default;
         }
@@ -1407,14 +1430,20 @@ export function createConnectorValidationSchema(
     ),
     // These are advanced settings
     indexingStart: Yup.string().nullable(),
-    pruneFreq: Yup.number().min(0, "Prune frequency must be non-negative"),
-    refreshFreq: Yup.number().min(0, "Refresh frequency must be non-negative"),
+    pruneFreq: Yup.number().min(
+      0.083,
+      "Prune frequency must be at least 0.083 hours (5 minutes)"
+    ),
+    refreshFreq: Yup.number().min(
+      1,
+      "Refresh frequency must be at least 1 minute"
+    ),
   });
 
   return object;
 }
 
-export const defaultPruneFreqDays = 30; // 30 days
+export const defaultPruneFreqHours = 720; // 30 days in hours
 export const defaultRefreshFreqMinutes = 30; // 30 minutes
 
 // CONNECTORS
@@ -1635,3 +1664,9 @@ export interface MediaWikiConfig extends MediaWikiBaseConfig {
 }
 
 export interface WikipediaConfig extends MediaWikiBaseConfig {}
+
+export interface ImapConfig {
+  host: string;
+  port?: number;
+  mailboxes?: string[];
+}
