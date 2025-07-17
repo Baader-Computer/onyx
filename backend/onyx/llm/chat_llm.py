@@ -323,6 +323,10 @@ class DefaultMultiLLM(LLM):
         return dump
 
     def _record_call(self, prompt: LanguageModelInput) -> None:
+        # Always log the prompt to the standard logger
+        logger.info(f"LLM Query - Model: {self.config.model_provider}/{self.config.model_name}, Prompt: {_prompt_to_dict(prompt)}")
+
+        # Also log to long term logger if available
         if self._long_term_logger:
             self._long_term_logger.record(
                 {"prompt": _prompt_to_dict(prompt), "model": self._safe_model_config()},

@@ -232,12 +232,16 @@ def semantic_reranking(
 
     Note: this updates the chunks in place, it updates the chunk scores which came from retrieval
     """
-    assert (
-        rerank_settings.rerank_model_name
-    ), "Reranking flow cannot run without a specific model"
+    logger.info(f"Začíná přeřazování pro dotaz: '{query_str}'")
+    logger.info(f"Počet chunků ke zpracování: {len(chunks)}")
+    logger.info(f"Počet chunků pro přeřazení: {rerank_settings.num_rerank}")
+
+    assert rerank_settings.rerank_model_name, "Reranking flow cannot run without a specific model"
+    logger.info(f"Použitý model pro přeřazení: {rerank_settings.rerank_model_name}")
 
     chunks_to_rerank = chunks[: rerank_settings.num_rerank]
 
+    logger.debug("Inicializace cross-encoder modelu")
     cross_encoder = RerankingModel(
         model_name=rerank_settings.rerank_model_name,
         provider_type=rerank_settings.rerank_provider_type,
@@ -249,14 +253,23 @@ def semantic_reranking(
         f"{chunk.semantic_identifier or chunk.title or ''}\n{chunk.content}"
         for chunk in chunks_to_rerank
     ]
+
+    logger.debug("Predikce podobností pomocí cross-encoder modelu")
     sim_scores_floats = cross_encoder.predict(query=query_str, passages=passages)
 
-    # Old logic to handle multiple cross-encoders preserved but not used
+    for i, (score, chunk) in enumerate(zip(sim_scores_floats, chunks_to_rerank)):
+        logger.debug(f"Chunk {i + 1}:")
+        logger.debug(f"  ID: {chunk.unique_id}")
+        logger.debug(f"  Raw score: {score}")
+        logger.debug(f"  Title: {chunk.title or 'N/A'}")
+        logger.debug(f"  Boost: {chunk.boost}")
+        logger.debug(f"  Recency bias: {chunk.recency_bias}")
+
     sim_scores = [numpy.array(sim_scores_floats)]
-
     raw_sim_scores = cast(numpy.ndarray, sum(sim_scores) / len(sim_scores))
-
     cross_models_min = numpy.min(sim_scores)
+
+    logger.debug(f"Minimální skóre mezi modely: {cross_models_min}")
 
     shifted_sim_scores = sum(
         [enc_n_scores - cross_models_min for enc_n_scores in sim_scores]
@@ -266,10 +279,16 @@ def semantic_reranking(
         translate_boost_count_to_multiplier(chunk.boost) for chunk in chunks_to_rerank
     ]
     recency_multiplier = [chunk.recency_bias for chunk in chunks_to_rerank]
+
+    logger.debug("Aplikace boost a recency faktorů:")
+    for i, (boost, recency) in enumerate(zip(boosts, recency_multiplier)):
+        logger.debug(f"  Chunk {i + 1}: boost={boost}, recency={recency}")
+
     boosted_sim_scores = shifted_sim_scores * boosts * recency_multiplier
     normalized_b_s_scores = (boosted_sim_scores + cross_models_min - model_min) / (
         model_max - model_min
     )
+
     orig_indices = [i for i in range(len(normalized_b_s_scores))]
     scored_results = list(
         zip(normalized_b_s_scores, raw_sim_scores, chunks_to_rerank, orig_indices)
@@ -279,9 +298,13 @@ def semantic_reranking(
         *scored_results
     )
 
-    logger.debug(
-        f"Reranked (Boosted + Time Weighted) similarity scores: {ranked_sim_scores}"
-    )
+    logger.info("Finální seřazené výsledky:")
+    for i, (score, raw_score, chunk) in enumerate(zip(ranked_sim_scores, ranked_raw_scores, ranked_chunks)):
+        logger.info(f"  Rank {i + 1}:")
+        logger.info(f"    ID: {chunk.unique_id}")
+        logger.info(f"    Finální skóre: {score:.4f}")
+        logger.info(f"    Raw skóre: {raw_score:.4f}")
+        logger.info(f"    Title: {chunk.title or 'N/A'}")
 
     # Assign new chunk scores based on reranking
     for ind, chunk in enumerate(ranked_chunks):
@@ -304,7 +327,9 @@ def semantic_reranking(
             )
         )
 
+    logger.info(f"Přeřazování dokončeno. Zpracováno {len(chunks_to_rerank)} chunků.")
     return list(ranked_chunks), list(ranked_indices)
+
 
 
 def should_rerank(rerank_settings: RerankingDetails | None) -> bool:
@@ -394,11 +419,15 @@ def filter_sections(
         metadata_list=metadata_list,
     )
 
-    return [
+    relevant_sections = [
         section
         for ind, section in enumerate(sections_to_filter)
         if llm_chunk_selection[ind]
     ]
+
+    logger.info(f"Evaluated {len(sections_to_filter)} sections for relevance, found {len(relevant_sections)} relevant sections")
+
+    return relevant_sections
 
 
 def search_postprocessing(

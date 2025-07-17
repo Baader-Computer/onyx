@@ -163,6 +163,8 @@ class SearchPipeline:
             retrieval_metrics_callback=self.retrieval_metrics_callback,
         )
 
+        logger.info(f"Retrieved {len(self._retrieved_chunks)} chunks for query: {self.search_query.query}")
+
         return cast(list[InferenceChunk], self._retrieved_chunks)
 
     @log_function_time(print_only=True)
@@ -378,6 +380,8 @@ class SearchPipeline:
         self._reranked_sections = cast(
             list[InferenceSection], next(self._postprocessing_generator)
         )
+
+        logger.info(f"Reranked {len(self._reranked_sections)} sections for query: {self.search_query.query}")
 
         return self._reranked_sections
 

@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   api_server:
     image: onyxdotapp/onyx-backend:${IMAGE_TAG:-latest}
@@ -125,6 +127,8 @@ services:
       - .env
     volumes:
       - db_volume:/var/lib/postgresql/data
+    ports:
+      - '5435:5432'
     logging:
       driver: json-file
       options:
@@ -136,6 +140,13 @@ services:
     build:
       context: ../../backend
       dockerfile: Dockerfile.model_server
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: >
       /bin/sh -c "if [ \"${DISABLE_MODEL_SERVER:-false}\" = \"True\" ]; then
         echo 'Skipping service...';
@@ -164,6 +175,13 @@ services:
     build:
       context: ../../backend
       dockerfile: Dockerfile.model_server
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: >
       /bin/sh -c "if [ \"${DISABLE_MODEL_SERVER:-false}\" = \"True\" ]; then
         echo 'Skipping service...';
