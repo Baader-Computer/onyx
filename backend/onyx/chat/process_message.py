@@ -725,9 +725,7 @@ def stream_chat_message_objects(
                     )
 
         # load all files needed for this chat chain in memory
-        files = load_all_chat_files(
-            history_msgs, new_msg_req.file_descriptors, db_session
-        )
+        files = load_all_chat_files(history_msgs, new_msg_req.file_descriptors)
         req_file_ids = [f["id"] for f in new_msg_req.file_descriptors]
         latest_query_files = [file for file in files if file.file_id in req_file_ids]
         user_file_ids = new_msg_req.user_file_ids or []
@@ -1012,6 +1010,7 @@ def stream_chat_message_objects(
             tools=tools,
             db_session=db_session,
             use_agentic_search=new_msg_req.use_agentic_search,
+            skip_gen_ai_answer_generation=new_msg_req.skip_gen_ai_answer_generation,
         )
 
         info_by_subq: dict[SubQuestionKey, AnswerPostInfo] = defaultdict(
