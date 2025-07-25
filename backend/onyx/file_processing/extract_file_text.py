@@ -300,8 +300,11 @@ def read_pdf_file(
     return "", metadata, []
 
 
-def docx_to_text_and_images(
-    file: IO[Any], file_name: str = ""
+def _extract_docx_content(
+    file: IO[Any], 
+    file_name: str = "", 
+    extract_tables: bool = True,
+    extract_images: bool = True
 ) -> tuple[str, Sequence[tuple[bytes, str]]]:
     """
     Extract text from a docx. If embed_images=True, also extract inline images.
@@ -346,7 +349,7 @@ def docx_to_text_and_images(
         if isinstance(item, docx.text.paragraph.Paragraph):
             paragraphs.append(item.text)
 
-        elif isinstance(item, docx.table.Table):
+        elif extract_tables and isinstance(item, docx.table.Table):
             if not item.rows or not is_simple_table(item):
                 continue
 
@@ -359,17 +362,28 @@ def docx_to_text_and_images(
             )
             paragraphs.append(table_content)
 
-    # Extract embedded images
-    for rel_id, rel in doc.part.rels.items():
-        if "image" in rel.reltype:
-            # image is typically in rel.target_part.blob
-            image_bytes = rel.target_part.blob
-            image_name = rel.target_part.partname
-            # store
-            embedded_images.append((image_bytes, os.path.basename(str(image_name))))
+    # Extract embedded images if requested
+    if extract_images:
+        for rel_id, rel in doc.part.rels.items():
+            if "image" in rel.reltype:
+                # image is typically in rel.target_part.blob
+                image_bytes = rel.target_part.blob
+                image_name = rel.target_part.partname
+                # store
+                embedded_images.append((image_bytes, os.path.basename(str(image_name))))
 
     text_content = "\n".join(paragraphs)
     return text_content, embedded_images
+
+
+def docx_to_text_and_images(
+    file: IO[Any], file_name: str = ""
+) -> tuple[str, Sequence[tuple[bytes, str]]]:
+    """
+    Extract text from a docx. If embed_images=True, also extract inline images.
+    Return (text_content, list_of_images).
+    """
+    return _extract_docx_content(file, file_name, extract_tables=True, extract_images=True)
 
 
 def pptx_to_text(file: IO[Any], file_name: str = "") -> str:
@@ -644,11 +658,14 @@ def convert_docx_to_txt(file: UploadFile, file_store: FileStore) -> str:
     """
     file.file.seek(0)
     docx_content = file.file.read()
-    doc = DocxDocument(BytesIO(docx_content))
 
-    # Extract text from the document
-    all_paras = [p.text for p in doc.paragraphs]
-    text_content = "\n".join(all_paras)
+    # Use the helper method to extract text only (no tables or images)
+    text_content, _ = _extract_docx_content(
+        BytesIO(docx_content), 
+        file_name=file.filename, 
+        extract_tables=True,
+        extract_images=False
+    )
 
     file_id = file_store.save_file(
         content=BytesIO(text_content.encode("utf-8")),
