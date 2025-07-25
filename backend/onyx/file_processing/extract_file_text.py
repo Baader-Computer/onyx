@@ -307,6 +307,22 @@ def docx_to_text_and_images(
     Extract text from a docx. If embed_images=True, also extract inline images.
     Return (text_content, list_of_images).
     """
+    def is_simple_table(table: docx.table.Table) -> bool:
+        for row in table.rows:
+            # No omitted cells
+            if row.grid_cols_before > 0 or row.grid_cols_after > 0:
+                return False
+
+            # No nested tables
+            if any(cell.tables for cell in row.cells):
+                return False
+
+        return True
+
+    def extract_cell_text(cell: docx.table._Cell) -> str:
+        cell_paragraphs = [para.text.strip() for para in cell.paragraphs]
+        return " ".join(p for p in cell_paragraphs if p) or "N/A"
+
     paragraphs = []
     embedded_images: list[tuple[bytes, str]] = []
 
@@ -325,15 +341,25 @@ def docx_to_text_and_images(
         )
         return text_content_raw or "", []
 
-    # Grab text from paragraphs
-    for paragraph in doc.paragraphs:
-        paragraphs.append(paragraph.text)
+    # Extract text from paragraphs and tables
+    for item in doc.iter_inner_content():
+        if isinstance(item, docx.text.paragraph.Paragraph):
+            paragraphs.append(item.text)
 
-    # Reset position so we can re-load the doc (python-docx has read the stream)
-    # Note: if python-docx has fully consumed the stream, you may need to open it again from memory.
-    # For large docs, a more robust approach is needed.
-    # This is a simplified example.
+        elif isinstance(item, docx.table.Table):
+            if not item.rows or not is_simple_table(item):
+                continue
 
+            # Every row is a new line, joined with a single newline
+            table_content = "\n".join(
+                [
+                    ",\t".join(extract_cell_text(cell) for cell in row.cells)
+                    for row in item.rows
+                ]
+            )
+            paragraphs.append(table_content)
+
+    # Extract embedded images
     for rel_id, rel in doc.part.rels.items():
         if "image" in rel.reltype:
             # image is typically in rel.target_part.blob
