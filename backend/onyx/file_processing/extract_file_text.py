@@ -83,6 +83,11 @@ IMAGE_MEDIA_TYPES = [
     "image/webp",
 ]
 
+KNOWN_OPENPYXL_BUGS = [
+    "Value must be either numerical or a string containing a wildcard",
+    "File contains no valid workbook part",
+]
+
 
 class OnyxExtensionType(IntFlag):
     Plain = auto()
@@ -301,8 +306,8 @@ def read_pdf_file(
 
 
 def _extract_docx_content(
-    file: IO[Any], 
-    file_name: str = "", 
+    file: IO[Any],
+    file_name: str = "",
     extract_tables: bool = True,
     extract_images: bool = True
 ) -> tuple[str, Sequence[tuple[bytes, str]]]:
@@ -331,7 +336,7 @@ def _extract_docx_content(
 
     try:
         doc = docx.Document(file)
-    except BadZipFile as e:
+    except (BadZipFile, ValueError) as e:
         logger.warning(
             f"Failed to extract docx {file_name or 'docx file'}: {e}. Attempting to read as text file."
         )
@@ -344,7 +349,7 @@ def _extract_docx_content(
         )
         return text_content_raw or "", []
 
-    # Extract text from paragraphs and tables
+    # Grab text from paragraphs and tables
     for item in doc.iter_inner_content():
         if isinstance(item, docx.text.paragraph.Paragraph):
             paragraphs.append(item.text)
@@ -364,10 +369,24 @@ def _extract_docx_content(
 
     # Extract embedded images if requested
     if extract_images:
+        # Reset position so we can re-load the doc (python-docx has read the stream)
+        # Note: if python-docx has fully consumed the stream, you may need to open it again from memory.
+        # For large docs, a more robust approach is needed.
+        # This is a simplified example.
         for rel_id, rel in doc.part.rels.items():
             if "image" in rel.reltype:
-                # image is typically in rel.target_part.blob
-                image_bytes = rel.target_part.blob
+                # Skip images that are linked rather than embedded (TargetMode="External")
+                if getattr(rel, "is_external", False):
+                    continue
+
+                try:
+                    # image is typically in rel.target_part.blob
+                    image_bytes = rel.target_part.blob
+                except ValueError:
+                    # Safeguard against relationships that lack an internal target_part
+                    # (e.g., external relationships or other anomalies)
+                    continue
+
                 image_name = rel.target_part.partname
                 # store
                 embedded_images.append((image_bytes, os.path.basename(str(image_name))))
@@ -414,7 +433,7 @@ def xlsx_to_text(file: IO[Any], file_name: str = "") -> str:
             logger.warning(error_str)
         return ""
     except Exception as e:
-        if "File contains no valid workbook part" in str(e):
+        if any(s in str(e) for s in KNOWN_OPENPYXL_BUGS):
             logger.error(
                 f"Failed to extract text from {file_name or 'xlsx file'}. This happens due to a bug in openpyxl. {e}"
             )
@@ -661,8 +680,8 @@ def convert_docx_to_txt(file: UploadFile, file_store: FileStore) -> str:
 
     # Use the helper method to extract text only (no tables or images)
     text_content, _ = _extract_docx_content(
-        BytesIO(docx_content), 
-        file_name=file.filename, 
+        BytesIO(docx_content),
+        file_name=file.filename,
         extract_tables=True,
         extract_images=False
     )

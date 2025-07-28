@@ -1060,9 +1060,14 @@ def connector_document_extraction(
                 connector=connector_runner.connector,
             )
 
+            # checkpoint resumption OR the connector already finished.
             if (
                 isinstance(connector_runner.connector, CheckpointedConnector)
                 and resuming_from_checkpoint
+            ) or (
+                most_recent_attempt
+                and most_recent_attempt.total_batches is not None
+                and not checkpoint.has_more
             ):
                 reissued_batch_count, completed_batches = reissue_old_batches(
                     batch_storage,
@@ -1108,15 +1113,8 @@ def connector_document_extraction(
                 # index being built. We want to populate it even for paused connectors
                 # Often paused connectors are sources that aren't updated frequently but the
                 # contents still need to be initially pulled.
-                if callback:
-                    if callback.should_stop():
-                        raise ConnectorStopSignal("Connector stop signal detected")
-
-                    # NOTE: this progress callback runs on every loop. We've seen cases
-                    # where we loop many times with no new documents and eventually time
-                    # out, so only doing the callback after indexing isn't sufficient.
-                    # TODO: change to doc extraction if it doesnt break things
-                    callback.progress("_run_indexing", 0)
+                if callback and callback.should_stop():
+                    raise ConnectorStopSignal("Connector stop signal detected")
 
                 # will exception if the connector/index attempt is marked as paused/failed
                 with get_session_with_current_tenant() as db_session_tmp:
@@ -1146,7 +1144,7 @@ def connector_document_extraction(
                     checkpoint = next_checkpoint
 
                 # below is all document processing task, so if no batch we can just continue
-                if document_batch is None:
+                if not document_batch:
                     continue
 
                 # Clean documents and create batch
