@@ -335,6 +335,13 @@ class DefaultMultiLLM(LLM):
     def _record_result(
         self, prompt: LanguageModelInput, model_output: BaseMessage
     ) -> None:
+        # Log the response to the standard logger
+        content = model_output.content or ""
+        tool_calls_str = ""
+        if hasattr(model_output, "tool_calls") and model_output.tool_calls:
+            tool_calls_str = f", Tool Calls: {model_output.tool_calls}"
+        logger.info(f"LLM Response - Model: {self.config.model_provider}/{self.config.model_name}, Content: {content}{tool_calls_str}")
+
         if self._long_term_logger:
             self._long_term_logger.record(
                 {
