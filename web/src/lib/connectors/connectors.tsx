@@ -590,7 +590,7 @@ export const connectorConfigs: Record<
                 label: "JQL Query",
                 name: "jql_query",
                 description:
-                  "A custom JQL query to filter Jira issues. This will be combined with time constraints for incremental indexing. See https://support.atlassian.com/jira-software-cloud/docs/advanced-search-reference-jql-fields/ for more details.",
+                  "A custom JQL query to filter Jira issues. See https://support.atlassian.com/jira-software-cloud/docs/advanced-search-reference-jql-fields/ for more details.",
               },
             ],
           },

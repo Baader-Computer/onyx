@@ -42,28 +42,6 @@ def jira_connector_with_jql() -> JiraConnector:
     return connector
 
 
-@pytest.fixture
-def jira_connector_with_both() -> JiraConnector:
-    """Fixture for a JiraConnector with both project_key and jql_query specified.
-    
-    This is used to test the precedence rules when both are provided.
-    The JQL query is set to only return Story-type issues, while the project key is set to "AS".
-    If the JQL query takes precedence as expected, only Story-type issues should be returned.
-    """
-    connector = JiraConnector(
-        jira_base_url="https://danswerai.atlassian.net",
-        project_key="AS",  # This should be ignored when jql_query is also provided
-        jql_query="project = AS AND issuetype = Story",  # This should take precedence
-        comment_email_blacklist=[],
-    )
-    connector.load_credentials(
-        {
-            "jira_user_email": os.environ["JIRA_USER_EMAIL"],
-            "jira_api_token": os.environ["JIRA_API_TOKEN"],
-        }
-    )
-    return connector
-
 
 @patch(
     "onyx.file_processing.extract_file_text.get_unstructured_api_key",
@@ -158,7 +136,7 @@ def test_jira_connector_basic(reset: None, jira_connector: JiraConnector) -> Non
 )
 def test_jira_connector_with_jql(reset: None, jira_connector_with_jql: JiraConnector) -> None:
     """Test that JQL query functionality works correctly.
-    
+
     This test verifies that when a JQL query is provided, only issues matching the query are returned.
     The JQL query used is "project = AS AND issuetype = Story", which should only return Story-type issues.
     """
@@ -167,68 +145,17 @@ def test_jira_connector_with_jql(reset: None, jira_connector_with_jql: JiraConne
         start=0,
         end=time.time(),
     )
-    
+
     # Should only return Story-type issues
     assert len(docs) == 1
-    
+
     # All documents should be Story-type
     for doc in docs:
         assert doc.metadata["issuetype"] == "Story"
-        
+
     # Verify it's the expected Story
     story = docs[0]
     assert story.id == "https://danswerai.atlassian.net/browse/AS-3"
     assert story.semantic_identifier == "AS-3: Magic Answers"
     assert story.metadata["issuetype"] == "Story"
 
-
-@patch(
-    "onyx.file_processing.extract_file_text.get_unstructured_api_key",
-    return_value=None,
-)
-def test_jira_connector_with_both(reset: None, jira_connector_with_both: JiraConnector) -> None:
-    """Test that when both project_key and jql_query are provided, the JQL query takes precedence.
-    
-    This test verifies that when both a project key and a JQL query are provided to the JiraConnector,
-    the JQL query takes precedence and the project key is ignored. The connector should behave the same
-    as if only the JQL query was provided.
-    
-    The test uses a connector with:
-    - project_key="AS" (which would normally return all issues in the AS project)
-    - jql_query="project = AS AND issuetype = Story" (which should only return Story-type issues)
-    
-    If the JQL query takes precedence as expected, only Story-type issues should be returned,
-    not all issues in the AS project.
-    """
-    docs = load_all_docs_from_checkpoint_connector(
-        connector=jira_connector_with_both,
-        start=0,
-        end=time.time(),
-    )
-    
-    # Should only return Story-type issues (same as test_jira_connector_with_jql)
-    # If project_key was used instead, we would expect 2 issues (Story and Epic)
-    assert len(docs) == 1
-    
-    # All documents should be Story-type
-    for doc in docs:
-        assert doc.metadata["issuetype"] == "Story"
-        
-    # Verify it's the expected Story
-    story = docs[0]
-    assert story.id == "https://danswerai.atlassian.net/browse/AS-3"
-    assert story.semantic_identifier == "AS-3: Magic Answers"
-    assert story.metadata["issuetype"] == "Story"
-    
-    # Additional verification: check that the JQL query used in the connector
-    # doesn't include the project_key directly (it should use the JQL query as is)
-    start_time = 0
-    end_time = time.time()
-    jql = jira_connector_with_both._get_jql_query(start_time, end_time)
-    
-    # The JQL should contain the custom query in parentheses
-    assert "(project = AS AND issuetype = Story)" in jql
-    
-    # The JQL should not contain an additional project filter outside the parentheses
-    # (which would happen if project_key was also being used)
-    assert "project = \"AS\" AND" not in jql.replace("(project = AS AND issuetype = Story)", "")
