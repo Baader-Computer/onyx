@@ -160,12 +160,14 @@ def get_test_config(
     use_agentic_search: bool = True,
 ) -> GraphConfig:
     persona = get_persona_by_id(DEFAULT_PERSONA_ID, None, db_session)
+    max_chunks_value = int(
+        persona.num_chunks
+        if persona.num_chunks is not None
+        else MAX_CHUNKS_FED_TO_CHAT
+    )
+    logger.info(f"Using MAX_CHUNKS_FED_TO_CHAT value in agent_search: {max_chunks_value} (from persona: {persona.num_chunks is not None})")
     document_pruning_config = DocumentPruningConfig(
-        max_chunks=int(
-            persona.num_chunks
-            if persona.num_chunks is not None
-            else MAX_CHUNKS_FED_TO_CHAT
-        ),
+        max_chunks=max_chunks_value,
         max_window_percentage=CHAT_TARGET_CHUNK_PERCENTAGE,
     )
 

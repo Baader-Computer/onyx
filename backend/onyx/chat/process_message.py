@@ -159,6 +159,8 @@ from onyx.utils.timing import log_generator_function_time
 from shared_configs.contextvars import get_current_tenant_id
 
 logger = setup_logger()
+
+logger = setup_logger()
 ERROR_TYPE_CANCELLED = "cancelled"
 
 COMMON_TOOL_RESPONSE_TYPES = {
@@ -551,6 +553,9 @@ def stream_chat_message_objects(
     3. [always] A set of streamed LLM tokens or an error anywhere along the line if something fails
     4. [always] Details on the final AI response message that is created
     """
+    # Log the actual value of MAX_CHUNKS_FED_TO_CHAT being used
+    logger.info(f"Using MAX_CHUNKS_FED_TO_CHAT value: {default_num_chunks}")
+    
     tenant_id = get_current_tenant_id()
     use_existing_user_message = new_msg_req.use_existing_user_message
     existing_assistant_message_id = new_msg_req.existing_assistant_message_id

@@ -549,10 +549,12 @@ def get_llm_max_tokens(
 
         if "max_input_tokens" in model_obj:
             max_tokens = model_obj["max_input_tokens"]
+            logger.info(f"Using max_input_tokens from model config for {model_provider}/{model_name}: {max_tokens}")
             return max_tokens
 
         if "max_tokens" in model_obj:
             max_tokens = model_obj["max_tokens"]
+            logger.info(f"Using max_tokens from model config for {model_provider}/{model_name}: {max_tokens}")
             return max_tokens
 
         logger.error(f"No max tokens found for LLM: {model_name}")
@@ -561,6 +563,7 @@ def get_llm_max_tokens(
         logger.exception(
             f"Failed to get max tokens for LLM with name {model_name}. Defaulting to {GEN_AI_MODEL_FALLBACK_MAX_TOKENS}."
         )
+        logger.info(f"Using fallback max tokens for {model_provider}/{model_name}: {GEN_AI_MODEL_FALLBACK_MAX_TOKENS}")
         return GEN_AI_MODEL_FALLBACK_MAX_TOKENS
 
 
@@ -579,11 +582,13 @@ def get_llm_max_output_tokens(
 
         if "max_output_tokens" in model_obj:
             max_output_tokens = model_obj["max_output_tokens"]
+            logger.info(f"Using max_output_tokens from model config for {model_provider}/{model_name}: {max_output_tokens}")
             return max_output_tokens
 
         # Fallback to a fraction of max_tokens if max_output_tokens is not specified
         if "max_tokens" in model_obj:
             max_output_tokens = int(model_obj["max_tokens"] * 0.1)
+            logger.info(f"Using calculated max_output_tokens (10% of max_tokens) for {model_provider}/{model_name}: {max_output_tokens}")
             return max_output_tokens
 
         logger.error(f"No max output tokens found for LLM: {model_name}")
@@ -594,6 +599,7 @@ def get_llm_max_output_tokens(
             f"Failed to get max output tokens for LLM with name {model_name}. "
             f"Defaulting to {default_output_tokens} (fallback max tokens)."
         )
+        logger.info(f"Using fallback max output tokens for {model_provider}/{model_name}: {default_output_tokens}")
         return default_output_tokens
 
 
@@ -620,8 +626,10 @@ def get_max_input_tokens(
     )
 
     if input_toks <= 0:
+        logger.info(f"Calculated input tokens <= 0, using fallback for {model_provider}/{model_name}: {GEN_AI_MODEL_FALLBACK_MAX_TOKENS}")
         return GEN_AI_MODEL_FALLBACK_MAX_TOKENS
 
+    logger.info(f"Using calculated max input tokens for {model_provider}/{model_name}: {input_toks} (max tokens - reserved output tokens {output_tokens})")
     return input_toks
 
 
@@ -633,14 +641,15 @@ def get_max_input_tokens_from_llm_provider(
     for model_configuration in llm_provider.model_configurations:
         if model_configuration.name == model_name:
             max_input_tokens = model_configuration.max_input_tokens
-    return (
-        max_input_tokens
-        if max_input_tokens
-        else get_max_input_tokens(
+    if max_input_tokens:
+        logger.info(f"Using max_input_tokens from LLM provider config for {llm_provider.name}/{model_name}: {max_input_tokens}")
+        return max_input_tokens
+    else:
+        logger.info(f"No max_input_tokens in LLM provider config for {llm_provider.name}/{model_name}, calculating...")
+        return get_max_input_tokens(
             model_provider=llm_provider.name,
             model_name=model_name,
         )
-    )
 
 
 def model_supports_image_input(model_name: str, model_provider: str) -> bool:

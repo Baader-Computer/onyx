@@ -18,9 +18,12 @@ from onyx.db.persona import upsert_persona
 from onyx.db.prompts import get_default_prompt
 from onyx.tools.built_in_tools import get_search_tool
 from onyx.utils.errors import EERequiredError
+from onyx.utils.logger import setup_logger
 from onyx.utils.variable_functionality import (
     fetch_versioned_implementation_with_fallback,
 )
+
+logger = setup_logger()
 
 
 def _build_persona_name(channel_name: str | None) -> str:
@@ -48,6 +51,8 @@ def create_slack_channel_persona(
     enable_auto_filters: bool = False,
 ) -> Persona:
     """NOTE: does not commit changes"""
+    
+    logger.info(f"Using MAX_CHUNKS_FED_TO_CHAT value in slack_channel_config: {num_chunks} (default: {MAX_CHUNKS_FED_TO_CHAT})")
 
     search_tool = get_search_tool(db_session)
     if search_tool is None:

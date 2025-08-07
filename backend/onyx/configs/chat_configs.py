@@ -1,4 +1,7 @@
 import os
+from onyx.utils.logger import setup_logger
+
+logger = setup_logger()
 
 INPUT_PROMPT_YAML = "./onyx/seeding/input_prompts.yaml"
 PROMPTS_YAML = "./onyx/seeding/prompts.yaml"
@@ -12,6 +15,7 @@ NUM_POSTPROCESSED_RESULTS = 20
 
 # May be less depending on model
 MAX_CHUNKS_FED_TO_CHAT = float(os.environ.get("MAX_CHUNKS_FED_TO_CHAT") or 10.0)
+logger.info(f"Initializing MAX_CHUNKS_FED_TO_CHAT with value: {MAX_CHUNKS_FED_TO_CHAT}")
 # For Chat, need to keep enough space for history and other prompt pieces
 # ~3k input, half for docs, half for chat history + prompts
 CHAT_TARGET_CHUNK_PERCENTAGE = 512 * 3 / 3072
