@@ -73,6 +73,11 @@ export interface OutlineCredentialJson {
   outline_api_token: string;
 }
 
+export interface XWikiCredentialJson {
+  xwiki_username: string;
+  xwiki_password: string;
+}
+
 export interface ConfluenceCredentialJson {
   confluence_username: string;
   confluence_access_token: string;
@@ -449,6 +454,10 @@ export const credentialTemplates: Record<ValidSources, any> = {
   user_file: null,
   wikipedia: null,
   mediawiki: null,
+  xwiki: {
+    xwiki_username: "",
+    xwiki_password: "",
+  } as XWikiCredentialJson,
   web: null,
   not_applicable: null,
   ingestion_api: null,
@@ -499,6 +508,9 @@ export const credentialDisplayNames: Record<string, string> = {
   confluence_username: "Confluence Username",
   confluence_access_token: "Confluence Access Token",
 
+  // XWiki
+  xwiki_username: "XWiki Username",
+  xwiki_password: "XWiki Password / Token",
   // Jira
   jira_user_email: "Jira User Email (required for Jira Cloud)",
   jira_api_token: "API or Personal Access Token",

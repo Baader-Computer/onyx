@@ -486,6 +486,7 @@ export enum ValidSources {
   Clickup = "clickup",
   Wikipedia = "wikipedia",
   Mediawiki = "mediawiki",
+  XWiki = "xwiki",
   Asana = "asana",
   S3 = "s3",
   R2 = "r2",

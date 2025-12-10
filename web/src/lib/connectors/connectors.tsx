@@ -1338,6 +1338,98 @@ For example, specifying .*-support.* as a "channel" will cause the connector to 
     ],
     advanced_values: [],
   },
+  xwiki: {
+    description: "Configure XWiki connector",
+    values: [
+      {
+        type: "text",
+        query: "Enter the base URL of your XWiki instance:",
+        label: "XWiki Base URL",
+        name: "base_url",
+        optional: false,
+        description:
+          "The base URL of your XWiki instance (e.g., https://wiki.example.com)",
+      },
+      {
+        type: "tab",
+        name: "indexing_scope",
+        label: "How Should We Index Your XWiki?",
+        optional: true,
+        tabs: [
+          {
+            value: "everything",
+            label: "Everything",
+            fields: [
+              {
+                type: "string_tab",
+                label: "Everything",
+                name: "everything",
+                description:
+                  "This connector will index all pages the provided credentials have access to!",
+              },
+            ],
+          },
+          {
+            value: "wiki",
+            label: "Wiki",
+            fields: [
+              {
+                type: "text",
+                query: "Enter the wiki (subwiki) identifier:",
+                label: "Wiki",
+                name: "wiki",
+                default: "",
+                description:
+                  "Identifier of the wiki to index (e.g., 'xwiki' for the main wiki or a subwiki name).",
+              },
+            ],
+          },
+          {
+            value: "page",
+            label: "Page",
+            fields: [
+              {
+                type: "text",
+                query: "Enter the root page:",
+                label: "Root Page",
+                name: "root_page",
+                default: "",
+                description:
+                  "Specific page to index (e.g., 'Docs.WebHome' or 'Space.Page'). If the page name has no dot, '.WebHome' is appended automatically.",
+              },
+              {
+                type: "checkbox",
+                query: "Should index pages recursively?",
+                label: "Index Recursively",
+                name: "index_recursively",
+                description:
+                  "If this is set, we will index the page indicated by the Root Page as well as all of its descendants.",
+                optional: false,
+                default: true,
+              },
+            ],
+          },
+          {
+            value: "tag",
+            label: "Tag",
+            fields: [
+              {
+                type: "text",
+                query: "Enter the tag:",
+                label: "Tag",
+                name: "tag",
+                default: "",
+                description:
+                  "Case-sensitive exact match. Only pages with this tag will be indexed.",
+              },
+            ],
+          },
+        ],
+        defaultTab: "page",
+      },
+    ],
+    advanced_values: [],
+  },
   asana: {
     description: "Configure Asana connector",
     values: [

@@ -31,6 +31,7 @@ import {
   ZulipIcon,
   MediaWikiIcon,
   WikipediaIcon,
+  XWikiIcon,
   AsanaIcon,
   S3Icon,
   OCIStorageIcon,
@@ -177,6 +178,12 @@ export const SOURCE_METADATA_MAP: SourceMap = {
     displayName: "Wikipedia",
     category: SourceCategory.Wiki,
     docs: `${DOCS_ADMINS_PATH}/connectors/official/wikipedia`,
+  },
+  xwiki: {
+    icon: XWikiIcon,
+    displayName: "XWiki",
+    category: SourceCategory.Wiki,
+    docs: "https://docs.onyx.app/admin/connectors/official/xwiki",
   },
 
   // Cloud Storage
@@ -515,3 +522,4 @@ export async function fetchTitleFromUrl(url: string): Promise<string | null> {
     return null;
   }
 }
+

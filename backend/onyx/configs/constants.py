@@ -195,6 +195,7 @@ class DocumentSource(str, Enum):
     CLICKUP = "clickup"
     MEDIAWIKI = "mediawiki"
     WIKIPEDIA = "wikipedia"
+    XWIKI = "xwiki"
     ASANA = "asana"
     S3 = "s3"
     R2 = "r2"
@@ -606,6 +607,7 @@ project management, and collaboration tools into a single, customizable platform
     DocumentSource.CLICKUP: "clickup - project management tool",
     DocumentSource.MEDIAWIKI: "mediawiki - wiki data",
     DocumentSource.WIKIPEDIA: "wikipedia - encyclopedia data",
+    DocumentSource.XWIKI: "xwiki - wiki data",
     DocumentSource.ASANA: "asana",
     DocumentSource.S3: "s3",
     DocumentSource.R2: "r2",

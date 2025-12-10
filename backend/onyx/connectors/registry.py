@@ -140,6 +140,10 @@ CONNECTOR_CLASS_MAP = {
         module_path="onyx.connectors.mediawiki.wiki",
         class_name="MediaWikiConnector",
     ),
+    DocumentSource.XWIKI: ConnectorMapping(
+        module_path="onyx.connectors.xwiki.connector",
+        class_name="XWikiConnector",
+    ),
     DocumentSource.WIKIPEDIA: ConnectorMapping(
         module_path="onyx.connectors.wikipedia.connector",
         class_name="WikipediaConnector",

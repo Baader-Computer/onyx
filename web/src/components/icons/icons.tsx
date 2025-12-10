@@ -95,6 +95,7 @@ import slackIcon from "../../../public/Slack.png";
 import teamsIcon from "../../../public/Teams.png";
 import wikipediaIcon from "../../../public/Wikipedia.png";
 import xenforoIcon from "../../../public/Xenforo.svg";
+import xwikiIcon from "../../../public/XWiki.svg";
 import zAIIcon from "../../../public/Z_AI.png";
 import zendeskIcon from "../../../public/Zendesk.svg";
 import zulipIcon from "../../../public/Zulip.png";
@@ -3102,6 +3103,7 @@ export const VoyageIconSVG = ({
 );
 export const WikipediaIcon = createLogoIcon(wikipediaIcon);
 export const XenforoIcon = createLogoIcon(xenforoIcon);
+export const XWikiIcon = createLogoIcon(xwikiIcon);
 export const ZAIIcon = createLogoIcon(zAIIcon);
 export const ZendeskIcon = ({
   size = 16,
